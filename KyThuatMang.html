@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Bài trả lời vấn đáp môn Lập trình ứng dụng mạng, dựa trên giao thức và mã nguồn đồ án AlgoVisual.">
+  <title>Kỹ thuật mạng — Vấn đáp đồ án AlgoVisual</title>
+  <style>
+    :root { color-scheme: light; --cream: #fff8dc; --ink: #302b20; --accent: #78551b; --line: #d9c995; --highlight: #ffe28a; }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 20px; }
+    body { margin: 0; background: var(--cream); color: var(--ink); font-family: Arial, sans-serif; font-size: 14px; line-height: 1.8; }
+    main { width: min(960px, calc(100% - 40px)); margin: 38px auto 56px; }
+    header { padding-bottom: 24px; border-bottom: 2px solid var(--line); }
+    .eyebrow { margin: 0 0 9px; color: var(--accent); font-weight: bold; letter-spacing: 1.1px; text-transform: uppercase; }
+    h1 { margin: 0 0 14px; font-size: 28px; line-height: 1.35; color: #583d13; }
+    h2 { margin: 0 0 15px; font-size: 20px; line-height: 1.45; color: #654718; }
+    h3 { margin: 22px 0 8px; font-size: 16px; color: #654718; }
+    p { margin: 0 0 13px; }
+    blockquote { margin: 17px 0 0; padding: 15px 19px; background: #fff1bb; border-left: 4px solid #b28228; }
+    blockquote p:last-child { margin-bottom: 0; }
+    nav { margin: 24px 0 30px; padding: 17px 20px; border: 1px solid var(--line); border-radius: 8px; }
+    nav ol { margin: 8px 0 0; padding-left: 23px; columns: 2; column-gap: 32px; }
+    nav li { break-inside: avoid; padding: 3px 0; }
+    a { color: #704a0a; text-underline-offset: 3px; overflow-wrap: anywhere; }
+    a:focus-visible { outline: 2px solid #78551b; outline-offset: 4px; }
+    section { margin-top: 32px; padding-bottom: 26px; border-bottom: 1px solid var(--line); }
+    mark { background: var(--highlight); color: inherit; padding: 1px 3px; border-radius: 3px; font-weight: bold; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+    strong { color: #513a14; }
+    ul, ol { margin: 9px 0 16px; padding-left: 24px; }
+    li { margin-bottom: 7px; }
+    code, pre { font-family: Arial, sans-serif; font-size: 14px; }
+    code { background: #f3e8bf; padding: 1px 4px; border-radius: 3px; overflow-wrap: anywhere; }
+    pre { margin: 14px 0; padding: 16px 18px; background: #fffcef; border: 1px solid var(--line); border-radius: 6px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+    pre code { background: none; padding: 0; }
+    .takeaway { margin-top: 17px; padding: 13px 17px; background: #fff0b2; border-left: 4px solid #b28228; }
+    .example { padding: 15px 18px; margin: 15px 0; border: 1px dashed #b49b5c; border-radius: 6px; }
+    .example p:last-child, .takeaway p:last-child { margin-bottom: 0; }
+    .table-wrap { overflow-x: auto; margin: 15px 0; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    caption { text-align: left; font-weight: bold; margin-bottom: 8px; }
+    th, td { padding: 10px 12px; border: 1px solid var(--line); vertical-align: top; }
+    th { background: #f5e7b5; color: #513a14; }
+    td { background: #fffbed; }
+    .source { color: #65583b; margin-top: 16px; }
+    .source code { background: none; padding: 0; }
+    footer { margin-top: 25px; color: #65583b; }
+    @media (max-width: 620px) { main { width: calc(100% - 28px); margin-top: 24px; } h1 { font-size: 24px; } nav ol { columns: 1; } th, td { padding: 9px; } }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    @media print { body { background: var(--cream); print-color-adjust: exact; -webkit-print-color-adjust: exact; } main { width: 100%; margin: 0; } nav { display: none; } h2, h3 { break-after: avoid; } tr, .takeaway, .example { break-inside: avoid; } a { color: inherit; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <p class="eyebrow">AlgoVisual · Lập trình ứng dụng mạng</p>
+    <h1>Trình bày kỹ thuật mạng của đồ án</h1>
+    <p>Bài trả lời vấn đáp về giao thức truyền tin, server đa luồng, đồng bộ dữ liệu và xử lý mất kết nối.</p>
+    <blockquote>
+      <p><strong>Giảng viên:</strong> “Em hãy mô tả giao thức mạng được thiết kế rõ ràng, nhất quán, xác định được chỗ kết thúc của gói tin và có mã lỗi. Server phục vụ nhiều client như thế nào? Dữ liệu dùng chung được đồng bộ ra sao và xử lý thế nào khi client thoát đột ngột hoặc mất kết nối?”</p>
+    </blockquote>
+  </header>
+
+  <nav aria-label="Mục lục bài trả lời">
+    <strong>Trình tự trình bày</strong>
+    <ol>
+      <li><a href="#tong-quan">Kiến trúc và nguyên tắc thiết kế</a></li>
+      <li><a href="#giao-thuc">Giao thức và ranh giới bản tin</a></li>
+      <li><a href="#ma-loi">Quy ước phản hồi và mã lỗi</a></li>
+      <li><a href="#da-luong">Server đa luồng và kiểm soát tải</a></li>
+      <li><a href="#dong-bo">Đồng bộ dữ liệu khi tranh chấp</a></li>
+      <li><a href="#mat-ket-noi">Thoát đột ngột và mất kết nối</a></li>
+      <li><a href="#kiem-chung">Cách chứng minh khi vấn đáp</a></li>
+      <li><a href="#ket-luan">Lời kết trả lời giảng viên</a></li>
+    </ol>
+  </nav>
+
+  <section id="tong-quan">
+    <h2>1. Trước hết, em xin trình bày kiến trúc tổng thể</h2>
+    <p>Thưa thầy/cô, đồ án AlgoVisual của nhóm em tổ chức theo mô hình <mark>client–server qua TCP Socket</mark>. Client dùng JavaFX để nhập dữ liệu, gửi yêu cầu và trực quan hóa kết quả thuật toán. Server Java chạy độc lập, chịu trách nhiệm xác thực, kiểm tra dữ liệu, tính toán thuật toán và truy cập PostgreSQL. Cổng mặc định của server là <code>5050</code>.</p>
+    <p>Em phân chia như vậy để <strong>server là nơi quyết định tính hợp lệ của nghiệp vụ và dữ liệu lưu trữ</strong>. Client có thể hỗ trợ kiểm tra đầu vào để phản hồi nhanh cho người dùng, nhưng server vẫn kiểm tra lại. Kết quả tính toán được trả về để client hiển thị hoặc phát lại mô phỏng.</p>
+    <p>Để đáp ứng yêu cầu của môn học, em tổ chức phần mạng theo bốn nội dung: <strong>quy định bản tin thống nhất; phục vụ đồng thời nhưng có giới hạn tài nguyên; đồng bộ trạng thái dùng chung; và thu hồi tài nguyên khi kết nối kết thúc</strong>. Sau đây em xin đi lần lượt từng phần.</p>
+  </section>
+
+  <section id="giao-thuc">
+    <h2>2. Về giao thức: làm sao hai bên hiểu thống nhất và biết bản tin kết thúc ở đâu?</h2>
+    <h3>2.1. Tách khung truyền dẫn và nội dung nghiệp vụ</h3>
+    <p>Thưa thầy/cô, nhóm em định nghĩa <strong>giao thức ứng dụng phiên bản 1</strong>. Ở tầng truyền dẫn, mỗi bản tin có một tiền tố độ dài. Sau khi thiết lập phiên mã hóa, nội dung nghiệp vụ là <strong>JSON UTF-8 được mã hóa bằng AES-256-GCM</strong>. Module <code>protocol</code> được client và server dùng chung để thống nhất cấu trúc dữ liệu, thao tác và mã lỗi.</p>
+    <pre aria-label="Cấu trúc khung truyền dẫn">[Độ dài L: 4 byte, big-endian] [Thân khung: đúng L byte]
+
+Sau bắt tay, thân khung gồm:
+[Header AAD: 29 byte] [JSON đã mã hóa: N byte] [Tag GCM: 16 byte]
+
+L = 29 + N + 16; không bao gồm 4 byte tiền tố.</pre>
+    <p>Header chứa phiên bản giao thức, chiều truyền, số thứ tự và mã phiên. Những trường này được xác thực cùng dữ liệu bằng GCM. Khi bắt tay, hệ thống dùng <strong>RSA-3072 OAEP SHA-256</strong> để chuyển vật liệu khóa; client kiểm tra dấu vân tay khóa công khai của server theo cấu hình trước khi tiếp tục. Mỗi kết nối mới dùng khóa phiên mới.</p>
+
+    <h3>2.2. Xác định chính xác điểm kết thúc bản tin</h3>
+    <p>Điểm em cần làm rõ là <mark>TCP truyền một luồng byte và không tự giữ ranh giới bản tin của ứng dụng</mark>. Một lần gửi có thể được nhận thành nhiều lần đọc; ngược lại, nhiều bản tin có thể cùng nằm trong dữ liệu đang chờ đọc. Vì vậy, em không coi một lần <code>read()</code> là một bản tin hoàn chỉnh.</p>
+    <p>Bên nhận thực hiện theo thứ tự: <strong>đọc đủ 4 byte tiền tố → kiểm tra độ dài L → đọc lặp đến đủ L byte thân khung → mới giải mã và phân tích JSON</strong>. Trong mã nguồn, <code>FrameReader</code> dùng vòng lặp đọc đủ, tương đương nguyên tắc <code>readFully</code>.</p>
+    <div class="example">
+      <p><strong>Ví dụ khi thầy/cô hỏi về việc tách bản tin:</strong> Giả sử tiền tố cho biết thân khung dài 120 byte. Lần đầu socket chỉ trả 50 byte thì em tiếp tục chờ 70 byte còn lại, chưa xử lý JSON. Khi đã đọc đủ 120 byte, bản tin đó kết thúc; 4 byte tiếp theo thuộc tiền tố của bản tin kế tiếp. Em không dùng dấu xuống dòng hoặc dấu <code>}</code> để xác định điểm kết thúc.</p>
+    </div>
+    <p>Độ dài được kiểm tra <mark>trước khi cấp phát bộ đệm</mark>. Giới hạn thân khung là <strong>32 KiB cho bắt tay, 4 MiB cho yêu cầu và 16 MiB cho phản hồi</strong>. Nếu L không dương, vượt giới hạn hoặc kết nối kết thúc giữa khung, bên nhận từ chối khung và đóng kết nối để tránh xử lý dữ liệu thiếu hoặc mất đồng bộ.</p>
+
+    <h3>2.3. Hợp đồng request thống nhất</h3>
+    <p>Một request gồm bốn trường: <code>version</code> xác định phiên bản; <code>requestId</code> là UUID v4 để ghép yêu cầu với phản hồi; <code>operation</code> chỉ thao tác; và <code>payload</code> chứa tham số đúng schema. Ví dụ JSON trước khi được mã hóa:</p>
+    <pre><code>{
+  "version": 1,
+  "requestId": "550e8400-e29b-41d4-a716-446655440000",
+  "operation": "PING",
+  "payload": {}
+}</code></pre>
+    <p>Server kiểm tra chặt schema, từ chối trường thừa, khóa JSON trùng, sai kiểu dữ liệu hoặc nội dung dư sau JSON. <strong>Mỗi kết nối chỉ có một RPC đang xử lý tại một thời điểm</strong>; client hoàn tất yêu cầu hiện tại rồi mới gửi yêu cầu tiếp theo. Nhiều client vẫn được phục vụ đồng thời trên các kết nối riêng.</p>
+    <p class="takeaway"><strong>Ý chính em muốn nhấn mạnh:</strong> <mark>Độ dài xác định ranh giới; schema xác định ý nghĩa; requestId xác định yêu cầu tương ứng.</mark></p>
+  </section>
+
+  <section id="ma-loi">
+    <h2>3. Về mã lỗi: client nhận biết và xử lý kết quả như thế nào?</h2>
+    <p>Thưa thầy/cô, server trả về một cấu trúc response thống nhất gồm <code>version</code>, <code>requestId</code>, <code>ok</code>, <code>data</code> và <code>error</code>. Khi thành công, <code>ok = true</code> và <code>error = null</code>. Khi thất bại, <code>ok = false</code>, <code>data = null</code> và đối tượng lỗi nêu rõ <strong>mã lỗi, thông báo, chi tiết theo trường nếu có và khả năng thử lại</strong>.</p>
+    <p>Ví dụ sau minh họa phản hồi cho một yêu cầu cập nhật bộ dữ liệu bị xung đột phiên bản; <code>requestId</code> phải được lấy từ chính yêu cầu đó:</p>
+    <pre><code>{
+  "version": 1,
+  "requestId": "c83f9c36-3ad8-4d42-97c2-52dbb6e18fe9",
+  "ok": false,
+  "data": null,
+  "error": {
+    "code": "CONFLICT",
+    "message": "Dữ liệu đã thay đổi. Vui lòng tải lại phiên bản mới nhất.",
+    "details": [],
+    "retryable": false
+  }
+}</code></pre>
+    <div class="table-wrap">
+      <table>
+        <caption>Các mã lỗi đã được định nghĩa trong đồ án</caption>
+        <thead><tr><th scope="col">Mã lỗi</th><th scope="col">Ý nghĩa và hướng xử lý</th></tr></thead>
+        <tbody>
+          <tr><td><code>BAD_REQUEST</code></td><td>Cấu trúc hoặc kiểu dữ liệu sai, có trường ngoài schema; sửa yêu cầu.</td></tr>
+          <tr><td><code>UNSUPPORTED_VERSION</code><br><code>UNKNOWN_OPERATION</code></td><td>Phiên bản hoặc tên thao tác không được hỗ trợ; đối chiếu hợp đồng giao thức.</td></tr>
+          <tr><td><code>VALIDATION_FAILED</code></td><td>Dữ liệu không thỏa điều kiện nghiệp vụ; hiển thị lỗi để người dùng sửa.</td></tr>
+          <tr><td><code>UNAUTHENTICATED</code><br><code>INVALID_CREDENTIALS</code></td><td>Chưa có phiên đăng nhập hợp lệ hoặc thông tin đăng nhập không đúng.</td></tr>
+          <tr><td><code>USERNAME_TAKEN</code></td><td>Tên tài khoản đã tồn tại; chọn tên khác.</td></tr>
+          <tr><td><code>FORBIDDEN</code><br><code>NOT_FOUND</code></td><td>Không đủ quyền hoặc tài nguyên không tồn tại.</td></tr>
+          <tr><td><code>CONFLICT</code></td><td>Xung đột phiên bản hoặc khóa idempotency; tải lại và xác nhận thay đổi, không gửi lặp mù payload cũ.</td></tr>
+          <tr><td><code>RESOURCE_LIMIT</code></td><td>Yêu cầu hoặc kết quả vượt giới hạn tài nguyên; giảm quy mô dữ liệu.</td></tr>
+          <tr><td><code>SERVER_BUSY</code><br><code>TIMEOUT</code><br><code>DATABASE_UNAVAILABLE</code></td><td>Lỗi tạm thời, có <code>retryable = true</code>; chỉ thử lại theo cách phù hợp với thao tác.</td></tr>
+          <tr><td><code>INTERNAL_ERROR</code></td><td>Lỗi nội bộ; thông báo an toàn cho client, không trả chi tiết nhạy cảm.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Như vậy, <mark>client dựa vào mã lỗi thay vì suy đoán từ câu thông báo</mark>. Server không đưa stack trace, SQL hay khóa bảo mật vào phản hồi. Với lỗi cấu trúc có <code>requestId</code> đáng tin cậy, server có thể trả lỗi tương ứng; nếu không xác định được yêu cầu, khung bị hỏng hoặc xác thực mã hóa thất bại, server đóng kết nối. Em không tự tạo một mã yêu cầu để gửi phản hồi không có căn cứ.</p>
+    <p>Em cũng phân biệt <strong>được phép thử lại</strong> với <strong>đã biết thao tác chưa thực hiện</strong>. Đặc biệt khi ghi dữ liệu, timeout hoặc mất phản hồi vẫn có thể xảy ra sau khi database đã commit; vì vậy cần cơ chế chống thực hiện trùng mà em trình bày ở phần đồng bộ.</p>
+  </section>
+
+  <section id="da-luong">
+    <h2>4. Về server đa luồng: phục vụ nhiều client mà vẫn ổn định</h2>
+    <p>Thưa thầy/cô, em không để luồng nhận kết nối làm luôn việc tính thuật toán. Server <mark>tách riêng nhận kết nối, xử lý I/O, tính toán và gửi phản hồi</mark>:</p>
+    <ol>
+      <li><strong>Luồng acceptor:</strong> gọi <code>accept()</code>, kiểm tra còn chỗ tiếp nhận rồi chuyển socket sang nhóm luồng I/O, sau đó tiếp tục nhận client khác.</li>
+      <li><strong>Nhóm luồng I/O:</strong> thực hiện bắt tay và vòng lặp đọc của từng kết nối. Mỗi client có <code>ConnectionContext</code> riêng, chứa socket, phiên mã hóa, danh tính đăng nhập và trạng thái yêu cầu.</li>
+      <li><strong>Nhóm luồng tính toán:</strong> xử lý công việc do dispatcher chuyển đến. Mặc định có <strong>4 worker và hàng đợi tối đa 16 tác vụ</strong>. Client đang mở kết nối nhưng chưa gửi yêu cầu không chiếm worker tính toán.</li>
+      <li><strong>Nhóm luồng gửi phản hồi:</strong> phục vụ việc gửi phản hồi, bao gồm phản hồi timeout được chuyển sang nhóm này. Bộ lập lịch theo dõi deadline không trực tiếp thực hiện việc ghi socket có thể bị chặn.</li>
+    </ol>
+    <p>Mặc định hệ thống tiếp nhận tối đa <strong>8 kết nối</strong>, tính cả kết nối đang bắt tay. Những giá trị này là cấu hình mặc định trong mã nguồn và có thể thay đổi qua cấu hình chạy. Khi đủ số kết nối, server đóng socket mới đến; các client đang hoạt động được giữ nguyên. Khi hàng đợi tính toán đầy, yêu cầu trên phiên hợp lệ được trả <code>SERVER_BUSY</code>.</p>
+    <p>Điểm đảm bảo ổn định là <mark>giới hạn cả kết nối, số worker và độ dài hàng đợi</mark>. Server không sinh thêm luồng hoặc tích lũy yêu cầu không giới hạn khi tải tăng. Việc ghi phản hồi cũng có deadline; client không đọc dữ liệu không được giữ tài nguyên vô thời hạn.</p>
+    <div class="example">
+      <p><strong>Ví dụ ba client A, B, C:</strong> A gửi tác vụ tính toán lâu, B gửi <code>PING</code>, C gửi dữ liệu không hợp lệ. Khi còn năng lực xử lý, worker khác có thể phục vụ B và C trong lúc A đang chạy. Lỗi của C được xử lý trong phạm vi yêu cầu hoặc kết nối C; vòng lặp tiếp nhận và các phiên A, B tiếp tục hoạt động.</p>
+    </div>
+    <p class="takeaway"><strong>Em phân biệt hai ý:</strong> Tuần tự trên <strong>một kết nối</strong> giúp quản lý RPC rõ ràng; <strong>đa luồng giữa nhiều kết nối</strong> giúp nhiều client sử dụng server cùng lúc.</p>
+  </section>
+
+  <section id="dong-bo">
+    <h2>5. Về đồng bộ dữ liệu: tránh sai lệch khi các luồng tranh chấp</h2>
+    <p>Thưa thầy/cô, em chia dữ liệu cần bảo vệ thành <strong>trạng thái dùng chung trong bộ nhớ server</strong> và <strong>dữ liệu dùng chung trong PostgreSQL</strong>. Mỗi loại có cơ chế đồng bộ phù hợp; chỉ thêm đa luồng mà không bảo vệ hai phần này thì vẫn có thể sai dữ liệu.</p>
+
+    <h3>5.1. Đồng bộ trạng thái trong bộ nhớ</h3>
+    <p>Danh sách phiên trong <code>ConnectionRegistry</code> dùng <code>ConcurrentHashMap</code>. Bộ đếm kết nối dùng <code>AtomicInteger</code>, với thao tác <code>compareAndSet</code> khi giữ chỗ để hai luồng không cùng chiếm chỗ cuối. Cờ đóng dùng cơ chế nguyên tử để phối hợp dọn dẹp.</p>
+    <p>Trạng thái theo kết nối và theo yêu cầu được bảo vệ bằng khóa <code>synchronized</code>. <code>RequestLifecycle</code> cho phép <mark>chỉ một nhánh giành quyền phản hồi kết thúc</mark> giữa hoàn thành, báo lỗi và timeout. Khi worker hoàn thành đúng lúc bộ theo dõi deadline kích hoạt, hai nhánh không cùng gửi hai kết quả cho một yêu cầu. Yêu cầu đã hủy cũng không được hồi sinh bởi tác vụ đến muộn.</p>
+    <p>Ở kênh mã hóa, khóa gửi bảo vệ đồng thời việc tăng số thứ tự, mã hóa và ghi khung. Nhờ đó, các nhánh gửi trên cùng socket không ghi xen byte hoặc dùng trùng số thứ tự. Khóa nhận được tách riêng để việc đọc không giữ khóa gửi.</p>
+
+    <h3>5.2. Chống ghi đè cập nhật bằng phiên bản</h3>
+    <p>Với bộ dữ liệu, server dùng <mark>optimistic locking qua trường version</mark>. Yêu cầu cập nhật phải mang phiên bản mà client đã đọc. Database kiểm tra phiên bản và cập nhật trong cùng một câu lệnh nguyên tử, theo nguyên tắc:</p>
+    <pre><code>UPDATE datasets
+SET ..., version = version + 1
+WHERE id = ? AND version = ?;</code></pre>
+    <div class="example">
+      <p><strong>Ví dụ tránh mất cập nhật:</strong> Hai phiên A và B của chủ sở hữu cùng đọc bộ dữ liệu phiên bản 5. A lưu trước, database đổi thành phiên bản 6. B tiếp tục lưu với phiên bản 5 thì không còn khớp điều kiện cập nhật. Server trả <code>CONFLICT</code>; B cần tải bản mới và quyết định cách sửa tiếp. Dữ liệu A vừa lưu không bị B âm thầm ghi đè.</p>
+    </div>
+    <p>Quyền sửa vẫn được kiểm tra theo danh tính đã xác thực ở server. Bộ dữ liệu được chia sẻ để người khác xem hoặc sử dụng không có nghĩa mọi người đều được sửa dữ liệu của chủ sở hữu.</p>
+
+    <h3>5.3. Transaction và khóa idempotency</h3>
+    <p>Các bước cần thành công cùng nhau được đặt trong <strong>transaction</strong>. Ví dụ thao tác tải bộ dữ liệu có ghi nhận lượt sử dụng: kiểm tra, ghi sự kiện, tăng bộ đếm và lưu kết quả chống trùng phải nhất quán trong giao dịch. Lỗi thì rollback, thành công thì commit. Bộ đếm được tăng bằng SQL <code>usage_count = usage_count + 1</code>, tránh cách đọc ra Java rồi ghi lại khiến hai lượt tăng có thể ghi đè nhau.</p>
+    <p>Đối với những thao tác có hỗ trợ chống trùng như tạo, cập nhật và tải bộ dữ liệu, em dùng <mark>idempotencyKey để nhận diện cùng một ý định thao tác khi thử lại</mark>. Server kiểm tra khóa theo người dùng, thao tác và dấu băm payload trong transaction; kết hợp khóa giao dịch và ràng buộc duy nhất của database để phối hợp các yêu cầu cạnh tranh. Cùng khóa và cùng nội dung hợp lệ có thể nhận lại kết quả đã lưu, thay vì thực hiện thay đổi lần nữa; cùng khóa nhưng khác nội dung bị báo xung đột.</p>
+    <p><strong>requestId và idempotencyKey có vai trò khác nhau:</strong> <code>requestId</code> ghép request với response của một lần trao đổi; <code>idempotencyKey</code> bảo vệ thao tác nghiệp vụ khi phải gửi lại. Cơ chế chống trùng có phạm vi và thời hạn lưu theo thiết kế; em không coi mọi request đều tự động có hiệu lực “chỉ thực hiện một lần” mãi mãi.</p>
+    <p class="takeaway"><strong>Tóm ý khi trả lời:</strong> <mark>Khóa và biến nguyên tử bảo vệ bộ nhớ; transaction bảo vệ các bước ghi; version chống ghi đè; idempotencyKey chống lặp thao tác khi thử lại.</mark></p>
+  </section>
+
+  <section id="mat-ket-noi">
+    <h2>6. Về client thoát đột ngột hoặc mất kết nối</h2>
+    <p>Thưa thầy/cô, em không phụ thuộc vào việc client gửi thông báo thoát. Client có thể bị tắt tiến trình, lỗi chương trình hoặc mất mạng trước khi gửi bất kỳ thông báo nào. Server cần tự phát hiện và dọn dẹp từ trạng thái socket cũng như các giới hạn thời gian.</p>
+
+    <h3>6.1. Phát hiện kết nối không còn sử dụng được</h3>
+    <p>Khi đầu bên kia đóng kết nối và hệ điều hành đã báo cho ứng dụng, việc đọc có thể nhận <strong>EOF</strong>; khi kết nối bị reset hoặc I/O lỗi, server nhận ngoại lệ. Nếu ngắt giữa tiền tố hoặc thân khung, server coi đó là khung thiếu và không xử lý dữ liệu dở dang. <strong>Mất mạng im lặng không phải lúc nào cũng được phát hiện ngay</strong>; trường hợp đó cần timeout hoặc lỗi I/O xuất hiện sau đó.</p>
+    <div class="table-wrap">
+      <table>
+        <caption>Các mốc thời gian mặc định trong mã nguồn</caption>
+        <thead><tr><th scope="col">Giới hạn</th><th scope="col">Mặc định</th><th scope="col">Mục đích</th></tr></thead>
+        <tbody>
+          <tr><td>Bắt tay</td><td>5 giây</td><td>Thu hồi kết nối không hoàn tất thiết lập phiên.</td></tr>
+          <tr><td>Deadline tính toán</td><td>10 giây</td><td>Tính cả thời gian chờ hàng đợi; hủy công việc quá hạn và trả TIMEOUT khi kênh còn dùng được.</td></tr>
+          <tr><td>Timeout request / ghi phản hồi</td><td>30 giây</td><td>Giới hạn chờ liên quan đến request và việc gửi phản hồi theo từng cơ chế xử lý.</td></tr>
+          <tr><td>Đọc socket khi chờ dữ liệu</td><td>10 phút</td><td>Đóng phiên khi thao tác đọc hết thời gian chờ dữ liệu.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Em phân biệt <strong>deadline tính toán</strong> với <strong>timeout đọc socket</strong>: một giới hạn công việc đang xử lý, một giới hạn việc chờ dữ liệu trên kết nối. Thao tác <code>PING</code> có sẵn trong giao thức để kiểm tra phản hồi khi được gọi, nhưng sự tồn tại của PING không có nghĩa hệ thống đã tự gửi heartbeat định kỳ.</p>
+
+    <h3>6.2. Thu hồi đúng tài nguyên của client đó</h3>
+    <p>Khi vòng lặp đọc kết thúc, khối <code>finally</code> thực hiện theo hướng: <strong>hủy tác vụ đang chạy → hủy bộ hẹn giờ → đóng kênh và socket → xóa phiên, trả lại chỗ kết nối</strong>. <code>Future.cancel(true)</code> yêu cầu ngắt worker; mã tính toán cần phối hợp kiểm tra ngắt để thoát. Em không xem lời gọi hủy là cơ chế cưỡng bức dừng tức thì mọi công việc hoặc tự hoàn tác một transaction đã commit.</p>
+    <p>Đóng kết nối được thiết kế để gọi lặp vẫn an toàn. Registry chỉ giảm số phiên đã đăng ký khi thực sự xóa được phiên; kết nối thất bại trước đăng ký có đường trả chỗ riêng. Vì vậy, EOF, timeout và lỗi ghi cùng xảy ra không được làm rò tài nguyên hoặc giải phóng lặp sai trạng thái.</p>
+    <p>Worker trả kết quả muộn phải tuân theo vòng đời yêu cầu và trạng thái kênh. Client cũng đối chiếu trạng thái phiên/workspace để phản hồi cũ không cập nhật nhầm màn hình hiện tại. <mark>Sự cố của một client được cô lập trong kết nối đó</mark>, còn server tiếp tục phục vụ các client khác.</p>
+
+    <h3>6.3. Mất phản hồi trong lúc lưu dữ liệu</h3>
+    <p>Tình huống quan trọng là <strong>database đã commit nhưng client chưa nhận được response</strong>. Khi ấy client chưa biết kết quả, nhưng dữ liệu có thể đã lưu. Em không khẳng định “mất kết nối thì chắc chắn rollback”. Với thao tác có hỗ trợ idempotency, client đăng nhập lại đúng tài khoản và thử lại cùng ý định với khóa cũ; server kiểm tra để trả lại kết quả đã ghi nhận, tránh tạo bản sao hoặc tăng phiên bản thêm lần nữa.</p>
+    <p>Phía client giữ bản nháp chưa lưu trong bộ nhớ của workspace đang mở để người dùng phục hồi thao tác. Dữ liệu đã commit nằm trong PostgreSQL. Nếu đóng ứng dụng, bản nháp chưa được lưu ra đĩa không được bảo đảm còn tồn tại.</p>
+  </section>
+
+  <section id="kiem-chung">
+    <h2>7. Nếu thầy/cô yêu cầu chứng minh, em sẽ trình bày như sau</h2>
+    <p>Thưa thầy/cô, ngoài giải thích thiết kế, em có thể chỉ vào các nhóm kiểm thử và thực hiện các tình huống sau để quan sát hành vi:</p>
+    <ol>
+      <li><strong>Ranh giới bản tin:</strong> gửi tiền tố/thân khung thành nhiều đoạn và ghép nhiều khung trên cùng luồng. Kiểm tra nhận đúng từng bản tin; thử độ dài sai, vượt giới hạn và EOF giữa khung để xác nhận từ chối.</li>
+      <li><strong>Phục vụ đồng thời và cô lập lỗi:</strong> cho ba client hoạt động cùng lúc; một client gửi dữ liệu lỗi hoặc khung mã hóa bị sửa, hai client còn lại vẫn nhận phản hồi hợp lệ. Có thể đối chiếu <code>ServerConcurrencyAndAdmissionTest</code> và <code>ServerThreeClientFaultIsolationTest</code>.</li>
+      <li><strong>Tranh chấp cập nhật:</strong> cho hai phiên hợp lệ sửa cùng một phiên bản bộ dữ liệu; đối chiếu database để xác nhận chỉ một cập nhật thành công, cập nhật còn lại nhận <code>CONFLICT</code>.</li>
+      <li><strong>Quá tải và deadline:</strong> làm đầy hàng đợi để kiểm tra <code>SERVER_BUSY</code>, chạy tác vụ quá hạn để kiểm tra <code>TIMEOUT</code>, rồi xác nhận server còn phục vụ được yêu cầu mới. Nhóm <code>ServerCancellationAndDeadlineTest</code> có các ca tương ứng.</li>
+      <li><strong>Thoát đột ngột:</strong> ngắt socket khi đang tính toán; quan sát hủy worker và thu hồi chỗ kết nối. Sau đó cho client khác kết nối để kiểm tra khả năng phục hồi.</li>
+      <li><strong>Mất phản hồi sau commit:</strong> ngắt kết nối tại thời điểm đó rồi thử lại bằng khóa cũ; kiểm tra số bản ghi, nội dung và phiên bản không bị nhân đôi. Đồng thời khởi động lại server để kiểm tra dữ liệu đã lưu vẫn nạp được.</li>
+    </ol>
+    <p>Em xin nói rõ phạm vi: tài liệu bàn giao hiện ghi nhận kiểm chứng trong môi trường <mark>local/localhost</mark>. Các bộ test trong repo là căn cứ để chạy và đối chiếu; việc soạn bài trả lời này không thay thế một lượt chạy kiểm thử mới. Để kết luận về hai máy qua LAN/Internet hoặc sức chịu tải triển khai thực tế, cần đo và nghiệm thu riêng trong môi trường đó.</p>
+    <p class="source"><strong>Vị trí đối chiếu trong đồ án:</strong> <a href="docs/backend/PROTOCOL_V1.md">đặc tả giao thức</a>; <a href="docs/backend/OPERATION_SCHEMAS.md">schema thao tác</a>; <a href="docs/KIEM_CHUNG.md">báo cáo kiểm chứng</a>. Mã triển khai chính nằm ở <code>FrameReader</code>, <code>EncryptedChannel</code>, <code>AlgoVisualServer</code>, <code>ServerConnectionHandler</code>, <code>ConnectionRegistry</code>, <code>RequestLifecycle</code>, <code>DatasetRepository</code> và <code>DatasetLoadService</code>.</p>
+  </section>
+
+  <section id="ket-luan">
+    <h2>8. Lời kết trả lời giảng viên</h2>
+    <p>Thưa thầy/cô, với đồ án này, em bảo đảm tính rõ ràng của giao thức bằng <mark>khung có tiền tố độ dài 4 byte, JSON theo schema, requestId và danh mục mã lỗi thống nhất</mark>. Việc phục vụ nhiều client được tổ chức bằng các nhóm luồng riêng, có giới hạn kết nối, hàng đợi và thời gian xử lý.</p>
+    <p>Về dữ liệu, em dùng cơ chế đồng bộ trong bộ nhớ và transaction tại database, kết hợp <strong>version để phát hiện cập nhật cạnh tranh</strong> và <strong>idempotencyKey để tránh lặp thao tác khi thử lại</strong>. Khi client ngắt kết nối, server phát hiện qua EOF, ngoại lệ hoặc timeout, rồi hủy công việc và thu hồi tài nguyên của phiên đó.</p>
+    <p><strong>Điều em muốn chứng minh là mỗi bản tin được tách đúng, mỗi yêu cầu có kết quả rõ ràng, cập nhật cạnh tranh không âm thầm ghi đè nhau, và một kết nối gặp sự cố không kéo theo các client còn lại. Em xin hết phần trình bày.</strong></p>
+  </section>
+
+  <footer>
+    <p>Tài liệu ôn vấn đáp · Nội dung đối chiếu với mã nguồn AlgoVisual · Nền vàng kem · Arial 14px.</p>
+  </footer>
+</main>
+</body>
+</html>
